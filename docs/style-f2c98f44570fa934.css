@@ -1,0 +1,44 @@
+.left {
+    width: 30%;
+    display: block;
+    float: left;
+}
+
+.right {
+    width: 60%;
+    display: block;
+    float: right;
+}
+
+.board {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.board-cell {
+    width: 100px;
+    aspect-ratio: 1;
+    border: 1px solid black;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+}
+
+.matchbox-wrapper {
+    display: inline;
+    margin: 10px;
+    float: left;
+}
+
+.matchbox {
+    border-collapse: collapse;
+}
+
+.matchbox-cell {
+    width: 20px;
+    height: 20px;
+    border: 1px solid black;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+}
