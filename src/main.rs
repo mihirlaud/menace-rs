@@ -1,10 +1,6 @@
 #![recursion_limit = "2048"]
 use yew::prelude::*;
 
-mod components;
-
-use components::board::Board;
-
 enum Msg {
 }
 
@@ -28,7 +24,6 @@ impl Component for Model {
         // This gives us a component's "`Scope`" which allows us to send messages, etc to the component.
         html! {
             <div>
-                <Board />
             </div>
         }
     }
