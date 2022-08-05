@@ -46,7 +46,7 @@ impl Component for Model {
 }
 
 fn main() {
-    panic::set_hook(Box::new(console_error_panic_hook::hook));
-    wasm_logger::init(wasm_logger::Config::default());
+    //panic::set_hook(Box::new(console_error_panic_hook::hook));
+    //wasm_logger::init(wasm_logger::Config::default());
     yew::start_app::<Model>();
 }
