@@ -2,9 +2,6 @@ use yew::prelude::*;
 use std::vec::Vec;
 use std::collections::HashMap;
 use rand::{thread_rng, Rng};
-use yew_agent::{Dispatched, Dispatcher};
-use crate::topics::score_topic::{ScoreTopic, ScoreRequest};
-use crate::topics::mb_topic::{MBTopic, MBRequest};
 
 #[derive(Clone, Copy)]
 struct BoardCell {
@@ -25,8 +22,6 @@ pub struct Board {
     token: char,
     cells: Vec<Vec<BoardCell>>,
     matchboxes: HashMap<String, Vec<usize>>,
-    score_topic: Dispatcher<ScoreTopic>,
-    mb_topic: Dispatcher<MBTopic>,
     last_menace_move: (String, usize),
     reset: bool,
     self_play: bool,
@@ -38,8 +33,6 @@ pub struct BoardProps {
 
 pub enum BoardMsg {
     Click(usize, usize),
-    UpdateScore((u32, u32, u32)),
-    UpdateMatchboxes(HashMap<String, Vec<usize>>),
     EndGame,
     Reset,
 }
@@ -174,7 +167,6 @@ impl Board {
                 self.last_menace_move = (current_board.clone(), board_idx);
 
                 self.matchboxes.insert(current_board, beads);
-                ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()))
             }
         }
 
@@ -207,32 +199,26 @@ impl Board {
 
         match winner {
             'X' => {
-                ctx.link().send_message(BoardMsg::UpdateScore((0, 1, 0)));
                 let beads = self.matchboxes.get(&self.last_menace_move.0).unwrap();
                 let mut new_beads = beads.clone();
                 new_beads.append(&mut vec![self.last_menace_move.1; 3]);
 
                 self.matchboxes.insert(self.last_menace_move.0.clone(), new_beads);
-                ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()));
             }
             'O' => {
-                ctx.link().send_message(BoardMsg::UpdateScore((1, 0, 0)));
                 let beads = self.matchboxes.get(&self.last_menace_move.0).unwrap();
                 let mut new_beads = beads.clone();
                 new_beads.retain(|&x| x != self.last_menace_move.1);
 
                 self.matchboxes.insert(self.last_menace_move.0.clone(), new_beads);
-                ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()));
             }
             'D' => {
-                ctx.link().send_message(BoardMsg::UpdateScore((0, 0, 1)));
                 let beads = self.matchboxes.get(&self.last_menace_move.0).unwrap();
                 let mut new_beads = beads.clone();
                 new_beads.append(&mut vec![self.last_menace_move.1]);
 
                 self.matchboxes.insert(self.last_menace_move.0.clone(), new_beads);
                 log::info!("{:?}", self.matchboxes);
-                ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()));
             }
             _ => ()
         }
@@ -254,8 +240,6 @@ impl Component for Board {
                 vec![BoardCell::default(), BoardCell::default(), BoardCell::default()],
             ],
             matchboxes: HashMap::new(),
-            score_topic: ScoreTopic::dispatcher(),
-            mb_topic: MBTopic::dispatcher(),
             last_menace_move: (String::new(), 0),
             reset: false,
             self_play: false,
@@ -289,14 +273,6 @@ impl Component for Board {
                 }
 
                 true
-            },
-            BoardMsg::UpdateScore(u) => {
-                self.score_topic.send(ScoreRequest::ScoreTopicMsg(u.to_owned()));
-                false
-            },
-            BoardMsg::UpdateMatchboxes(m) => {
-                self.mb_topic.send(MBRequest::MBTopicMsg(m.to_owned()));
-                false
             },
             BoardMsg::EndGame => {
                 for i in 0 .. self.cells.len() {

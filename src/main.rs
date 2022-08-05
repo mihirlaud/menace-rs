@@ -2,11 +2,8 @@
 use yew::prelude::*;
 
 mod components;
-mod topics;
 
 use components::board::Board;
-//use components::matchboxes::Matchboxes;
-//use components::score::Scoreboard;
 
 enum Msg {
 }
@@ -31,13 +28,7 @@ impl Component for Model {
         // This gives us a component's "`Scope`" which allows us to send messages, etc to the component.
         html! {
             <div>
-                <div class="left">
-                    <Board />
-                    //<Scoreboard />
-                </div>
-                <div class="right">
-                    //<Matchboxes />
-                </div>
+                <Board />
             </div>
         }
     }
