@@ -5,8 +5,8 @@ mod components;
 mod topics;
 
 use components::board::Board;
-//use components::matchboxes::Matchboxes;
-//use components::score::Scoreboard;
+use components::matchboxes::Matchboxes;
+use components::score::Scoreboard;
 
 enum Msg {
 }
@@ -33,10 +33,10 @@ impl Component for Model {
             <div>
                 <div class="left">
                     <Board />
-                    //<Scoreboard />
+                    <Scoreboard />
                 </div>
                 <div class="right">
-                    //<Matchboxes />
+                    <Matchboxes />
                 </div>
             </div>
         }
