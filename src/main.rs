@@ -1,15 +1,12 @@
 #![recursion_limit = "2048"]
 use yew::prelude::*;
-use wasm_logger;
-use std::panic;
-use console_error_panic_hook;
 
 mod components;
 mod topics;
 
 use components::board::Board;
-use components::matchboxes::Matchboxes;
-use components::score::Scoreboard;
+//use components::matchboxes::Matchboxes;
+//use components::score::Scoreboard;
 
 enum Msg {
 }
@@ -36,10 +33,10 @@ impl Component for Model {
             <div>
                 <div class="left">
                     <Board />
-                    <Scoreboard />
+                    //<Scoreboard />
                 </div>
                 <div class="right">
-                    <Matchboxes />
+                    //<Matchboxes />
                 </div>
             </div>
         }
@@ -47,7 +44,5 @@ impl Component for Model {
 }
 
 fn main() {
-    //panic::set_hook(Box::new(console_error_panic_hook::hook));
-    //wasm_logger::init(wasm_logger::Config::default());
     yew::start_app::<Model>();
 }
