@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use std::vec::Vec;
 use std::collections::HashMap;
-use rand::{thread_rng, Rng};
+// use rand::{thread_rng, Rng};
 
 #[derive(Clone, Copy)]
 struct BoardCell {
@@ -121,7 +121,7 @@ impl Board {
         
         match self.matchboxes.get(&current_board) {
             Some(beads) => {
-                let idx = thread_rng().gen_range(0 .. beads.len());
+                let idx = 0;
                 let board_idx = beads[idx];
                 let mut i = board_idx / 3;
                 let mut j = board_idx % 3;
@@ -157,7 +157,7 @@ impl Board {
                     }
                 }
 
-                let idx = thread_rng().gen_range(0..beads.len());
+                let idx = 0;
                 let board_idx = beads[idx];
                 let i = board_idx / 3;
                 let j = board_idx % 3;
@@ -218,7 +218,6 @@ impl Board {
                 new_beads.append(&mut vec![self.last_menace_move.1]);
 
                 self.matchboxes.insert(self.last_menace_move.0.clone(), new_beads);
-                log::info!("{:?}", self.matchboxes);
             }
             _ => ()
         }
