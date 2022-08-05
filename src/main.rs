@@ -1,3 +1,4 @@
+#![recursion_limit = "2048"]
 use yew::prelude::*;
 use wasm_logger;
 use std::panic;
