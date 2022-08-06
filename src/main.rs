@@ -1,5 +1,6 @@
 #![recursion_limit = "2048"]
 use yew::prelude::*;
+use std::panic;
 
 mod components;
 mod topics;
@@ -44,5 +45,7 @@ impl Component for Model {
 }
 
 fn main() {
+    panic::set_hook(Box::new(console_error_panic_hook::hook));
+    wasm_logger::init(wasm_logger::Config::default());
     yew::start_app::<Model>();
 }

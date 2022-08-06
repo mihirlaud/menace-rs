@@ -27,7 +27,7 @@ pub struct Board {
     matchboxes: HashMap<String, Vec<usize>>,
     score_topic: Dispatcher<ScoreTopic>,
     mb_topic: Dispatcher<MBTopic>,
-    last_menace_move: (String, usize),
+    current_moveset: Vec<(String, usize)>,
     reset: bool,
     self_play: bool,
 }
@@ -153,14 +153,17 @@ impl Board {
 
                 ctx.link().send_message(BoardMsg::Click(i, j));
 
-                self.last_menace_move = (current_board, board_idx);
+                self.current_moveset.push((current_board, board_idx));
+                log::info!("{:?}", self.current_moveset);
             }
             None => {
                 let mut beads = vec![];
 
                 for (idx, c) in current_board.chars().enumerate() {
                     if c == '-' {
-                        beads.push(idx);
+                        let move_num = self.current_moveset.len() + 1;
+                        beads.append(&mut vec![idx; 8 / num::pow(2, (move_num - 1) / 2)]);
+                        log::info!("{:?}", beads);
                     }
                 }
 
@@ -171,7 +174,8 @@ impl Board {
                 
                 ctx.link().send_message(BoardMsg::Click(i, j));
                 
-                self.last_menace_move = (current_board.clone(), board_idx);
+                self.current_moveset.push((current_board.clone(), board_idx));
+                log::info!("{:?}", self.current_moveset);
 
                 self.matchboxes.insert(current_board, beads);
                 ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()))
@@ -208,30 +212,47 @@ impl Board {
         match winner {
             'X' => {
                 ctx.link().send_message(BoardMsg::UpdateScore((0, 1, 0)));
-                let beads = self.matchboxes.get(&self.last_menace_move.0).unwrap();
-                let mut new_beads = beads.clone();
-                new_beads.append(&mut vec![self.last_menace_move.1; 3]);
+                for (board, bead) in self.current_moveset.clone() {
+                    let beads = self.matchboxes.get(&board).unwrap();
+                    let mut new_beads = beads.clone();
+                    new_beads.append(&mut vec![bead; 3]);
 
-                self.matchboxes.insert(self.last_menace_move.0.clone(), new_beads);
+                    self.matchboxes.insert(board, new_beads);
+                }
+
                 ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()));
             }
             'O' => {
                 ctx.link().send_message(BoardMsg::UpdateScore((1, 0, 0)));
-                let beads = self.matchboxes.get(&self.last_menace_move.0).unwrap();
-                let mut new_beads = beads.clone();
-                new_beads.retain(|&x| x != self.last_menace_move.1);
+                for (board, bead) in self.current_moveset.clone() {
+                    let beads = self.matchboxes.get(&board).unwrap();
+                    let mut new_beads = beads.clone();
+                    let mut removal = 0;
+                    for (i, b) in new_beads.iter().enumerate() {
+                        if *b == bead {
+                            removal = i;
+                            break;
+                        }
+                    }
+                    new_beads.remove(removal);
 
-                self.matchboxes.insert(self.last_menace_move.0.clone(), new_beads);
+                    self.matchboxes.insert(board, new_beads);
+                }
+
+                ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()));
                 ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()));
             }
             'D' => {
                 ctx.link().send_message(BoardMsg::UpdateScore((0, 0, 1)));
-                let beads = self.matchboxes.get(&self.last_menace_move.0).unwrap();
-                let mut new_beads = beads.clone();
-                new_beads.append(&mut vec![self.last_menace_move.1]);
+                for (board, bead) in self.current_moveset.clone() {
+                    let beads = self.matchboxes.get(&board).unwrap();
+                    let mut new_beads = beads.clone();
+                    new_beads.append(&mut vec![bead]);
 
-                self.matchboxes.insert(self.last_menace_move.0.clone(), new_beads);
-                log::info!("{:?}", self.matchboxes);
+                    self.matchboxes.insert(board, new_beads);
+                }
+
+                ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()));
                 ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()));
             }
             _ => ()
@@ -256,7 +277,7 @@ impl Component for Board {
             matchboxes: HashMap::new(),
             score_topic: ScoreTopic::dispatcher(),
             mb_topic: MBTopic::dispatcher(),
-            last_menace_move: (String::new(), 0),
+            current_moveset: vec![],
             reset: false,
             self_play: false,
         };
@@ -315,6 +336,7 @@ impl Component for Board {
                     vec![BoardCell::default(), BoardCell::default(), BoardCell::default()],
                     vec![BoardCell::default(), BoardCell::default(), BoardCell::default()],
                 ];
+                self.current_moveset = vec![];
                 self.reset = false;
 
                 self.take_turn(ctx);
