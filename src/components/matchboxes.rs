@@ -5,7 +5,11 @@ use crate::topics::mb_topic::MBTopic;
 use yew_agent::{Bridge, Bridged};
 
 pub struct Matchboxes {
-    matchboxes: Vec<String>,
+    matchboxes: HashMap<String, Vec<usize>>,
+    last_move: String,
+    last_perm: String,
+    refl: bool,
+    rot: i32,
     _pub: Box<dyn Bridge<MBTopic>>
 }
 
@@ -14,7 +18,7 @@ pub struct MBProps {
 }
 
 pub enum MBMsg {
-    Update(HashMap<String, Vec<usize>>)
+    Update((HashMap<String, Vec<usize>>, String))
 }
 
 impl Component for Matchboxes {
@@ -23,81 +27,115 @@ impl Component for Matchboxes {
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            matchboxes: vec![],
+            matchboxes: HashMap::new(),
+            last_move: String::new(),
+            last_perm: String::new(),
+            refl: false,
+            rot: 0,
             _pub: MBTopic::bridge(ctx.link().callback(MBMsg::Update))
         }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            MBMsg::Update(map) => {
-                self.matchboxes = vec![];
-                for key in map.keys() {
-                    let mut freq: HashMap<usize, u32> = HashMap::new();
-                    let beads = map.get(key).unwrap();
-                    for bead in beads {
-                        match freq.get(bead) {
-                            Some(f) => {
-                                freq.insert(*bead, f + 1);
-                            }
-                            None => {
-                                freq.insert(*bead, 1);
-                            }
+            MBMsg::Update((map, last_move)) => {
+                self.matchboxes = map;
+                if last_move != self.last_perm {
+                    self.last_move = last_move;
+
+                    self.refl = false;
+                    self.rot = 0;
+                    let current_perms = crate::components::board::get_permutations(&self.last_move);
+                    for (perm, perm_refl, perm_rot) in current_perms {
+                        if self.matchboxes.contains_key(&perm) {
+                            self.last_perm = perm;
+                            self.refl = if perm_refl == 1 { true } else { false };
+                            self.rot = perm_rot;
                         }
                     }
-                    let mut prob_vec: Vec<String> = freq.keys().map(|k| format!("{},{:.2};", k, *freq.get(k).unwrap() as f32 / beads.len() as f32)).collect();
-                    prob_vec.sort();
-                    self.matchboxes.push(format!("{}:{}", key, prob_vec.iter().cloned().collect::<String>()));
                 }
+
                 true
             }
         }
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
-
-        html! {
-            {
-                self.matchboxes.iter().map(|s| {
-                    let split_1: Vec<&str> = s.split(':').collect();
-                    let board = split_1[0];
-
-                    let split_2: Vec<&str> = split_1[1].split(';').collect();
-                    let split_3 = split_2.iter().map(|s| {
-                        s.split(',').collect::<Vec<&str>>()
-                    }).collect::<Vec<Vec<&str>>>();
-
-                    let mut square: Vec<Vec<String>> = vec![
-                        vec![board.get(0..1).unwrap().to_string(), board.get(1..2).unwrap().to_string(), board.get(2..3).unwrap().to_string()],
-                        vec![board.get(3..4).unwrap().to_string(), board.get(4..5).unwrap().to_string(), board.get(5..6).unwrap().to_string()],
-                        vec![board.get(6..7).unwrap().to_string(), board.get(7..8).unwrap().to_string(), board.get(8..9).unwrap().to_string()],
-                    ];
-
-                    for pair in split_3 {
-                        if pair.len() > 1 {
-                            let idx = usize::from_str_radix(pair[0], 10).unwrap();
-                            let i = idx / 3;
-                            let j = idx % 3;
-                            square[i][j] = pair[1].to_string();
-                        }
+        log::info!("{}", self.last_move);
+        
+        if let Some(beads) = self.matchboxes.get(&self.last_perm) {
+            let mut freq: HashMap<usize, i32> = HashMap::new();
+            for b in beads {
+                match freq.get(b) {
+                    Some(f) => {
+                        freq.insert(*b, f + 1);
                     }
-                    
-                    html! {
-                        <div class="matchbox-wrapper">
-                            <table class="matchbox">
-                                {square.iter().map(|row| {
-                                    html! {
-                                        <tr>
-                                            {row.iter().map(|cell| {
-                                                html!{ <td class="matchbox-cell">{cell}</td> }
-                                            }).collect::<Html>()}
-                                        </tr>
-                                    }
-                                }).collect::<Html>()}
-                            </table>
-                        </div>
+                    None => {
+                        freq.insert(*b, 1);
                     }
-                }).collect::<Html>()
+                }
+            }
+
+            let mut arr: [[i32; 3]; 3] = [[0; 3]; 3];
+            for key in freq.keys() {
+                let mut i = key / 3;
+                let mut j = key % 3;
+
+                for _ in 0 .. 4 - self.rot {
+                    (i, j) = match (i, j) {
+                        (0, 0) => (0, 2),
+                        (0, 1) => (1, 2),
+                        (0, 2) => (2, 2),
+                        (1, 0) => (0, 1),
+                        (1, 2) => (2, 1),
+                        (2, 0) => (0, 0),
+                        (2, 1) => (1, 0),
+                        (2, 2) => (2, 0),
+                        _ => (i, j)
+                    };
+                }
+
+                if self.refl {
+                    i = 2 - i;
+                }
+
+                arr[i][j] = *freq.get(key).unwrap();
+            }
+
+            html! {
+                <div class="menace-vis">
+                    <p style="text-align: center;">{"PREVIOUS MOVE"}</p>
+                    <table class="menace-vis-table">
+                    {
+                        for arr.iter().enumerate().map(|(i, row)| {
+                            html! {
+                                <tr>
+                                {
+                                    for row.iter().enumerate().map(|(j, c)| {
+                                        html! { 
+                                            <td class="menace-vis-cell">
+                                            {
+                                                if *c != 0 { 
+                                                    format!("{:.1}%", *c as f32 / beads.len() as f32 * 100.0) 
+                                                } else {
+                                                    self.last_move.chars().nth(3 * i + j).unwrap().to_string()
+                                                 }
+                                            }
+                                            </td>
+                                        }
+                                    })
+                                }
+                                </tr>
+                            }
+                        })
+                    }
+                    </table>
+                </div>
+            }
+        } else {
+            html! {
+                <div class="matchboxes">
+                </div>
             }
         }
     }

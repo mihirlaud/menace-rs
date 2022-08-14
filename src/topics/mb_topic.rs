@@ -5,7 +5,7 @@ use yew_agent::{Agent, AgentLink, Context, HandlerId};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum MBRequest {
-    MBTopicMsg(HashMap<String, Vec<usize>>),
+    MBTopicMsg((HashMap<String, Vec<usize>>, String)),
 }
 
 pub struct MBTopic {
@@ -17,7 +17,7 @@ impl Agent for MBTopic {
     type Reach = Context<Self>;
     type Message = ();
     type Input = MBRequest;
-    type Output = HashMap<String, Vec<usize>>;
+    type Output = (HashMap<String, Vec<usize>>, String);
 
     fn create(link: AgentLink<Self>) -> Self {
         Self {

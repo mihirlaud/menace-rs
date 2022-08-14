@@ -39,7 +39,7 @@ pub struct BoardProps {
 pub enum BoardMsg {
     Click(usize, usize),
     UpdateScore((u32, u32, u32)),
-    UpdateMatchboxes(HashMap<String, Vec<usize>>),
+    UpdateMatchboxes((HashMap<String, Vec<usize>>, String)),
     EndGame,
     Reset,
 }
@@ -89,7 +89,7 @@ fn reflect_string(board: String) -> String {
     ].iter().cloned().collect::<String>()
 }
 
-fn get_permutations(board: &String) -> Vec<(String, i32, i32)> {
+pub fn get_permutations(board: &String) -> Vec<(String, i32, i32)> {
     let mut perms = vec![];
 
     for n in 0 .. 8 {
@@ -115,6 +115,7 @@ impl Board {
 
     fn take_turn(&mut self, ctx: &Context<Self>) {
         let mut current_board = self.as_string();
+        let board_state = current_board.clone();
         let mut refl = false;
         let mut rot = 0;
         let current_perms = get_permutations(&current_board);
@@ -154,19 +155,23 @@ impl Board {
                 ctx.link().send_message(BoardMsg::Click(i, j));
 
                 self.current_moveset.push((current_board, board_idx));
-                log::info!("{:?}", self.current_moveset);
+                ctx.link().send_message(BoardMsg::UpdateMatchboxes((self.matchboxes.clone(), board_state)));
             }
             None => {
                 let mut beads = vec![];
 
                 for (idx, c) in current_board.chars().enumerate() {
                     if c == '-' {
-                        let move_num = self.current_moveset.len() + 1;
-                        beads.append(&mut vec![idx; 8 / num::pow(2, (move_num - 1) / 2)]);
-                        log::info!("{:?}", beads);
+                        let move_num = 2 * self.current_moveset.len() + 1;
+                        let mut bead_count = 8 / num::pow(2, (move_num - 1) / 2);
+                        if bead_count == 0 {
+                            bead_count = 1;
+                        }
+                        beads.append(&mut vec![idx; bead_count]);
                     }
                 }
 
+                log::info!("{}", 2 * self.current_moveset.len() + 1);
                 let idx = thread_rng().gen_range(0..beads.len());
                 let board_idx = beads[idx];
                 let i = board_idx / 3;
@@ -175,10 +180,9 @@ impl Board {
                 ctx.link().send_message(BoardMsg::Click(i, j));
                 
                 self.current_moveset.push((current_board.clone(), board_idx));
-                log::info!("{:?}", self.current_moveset);
 
                 self.matchboxes.insert(current_board, beads);
-                ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()))
+                ctx.link().send_message(BoardMsg::UpdateMatchboxes((self.matchboxes.clone(), board_state)));
             }
         }
 
@@ -220,7 +224,7 @@ impl Board {
                     self.matchboxes.insert(board, new_beads);
                 }
 
-                ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()));
+                ctx.link().send_message(BoardMsg::UpdateMatchboxes((self.matchboxes.clone(), self.as_string())));
             }
             'O' => {
                 ctx.link().send_message(BoardMsg::UpdateScore((1, 0, 0)));
@@ -239,8 +243,7 @@ impl Board {
                     self.matchboxes.insert(board, new_beads);
                 }
 
-                ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()));
-                ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()));
+                ctx.link().send_message(BoardMsg::UpdateMatchboxes((self.matchboxes.clone(), self.current_moveset[self.current_moveset.len() - 1].0.clone())));
             }
             'D' => {
                 ctx.link().send_message(BoardMsg::UpdateScore((0, 0, 1)));
@@ -252,8 +255,7 @@ impl Board {
                     self.matchboxes.insert(board, new_beads);
                 }
 
-                ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()));
-                ctx.link().send_message(BoardMsg::UpdateMatchboxes(self.matchboxes.clone()));
+                ctx.link().send_message(BoardMsg::UpdateMatchboxes((self.matchboxes.clone(), self.as_string())));
             }
             _ => ()
         }
@@ -315,8 +317,9 @@ impl Component for Board {
                 self.score_topic.send(ScoreRequest::ScoreTopicMsg(u.to_owned()));
                 false
             },
-            BoardMsg::UpdateMatchboxes(m) => {
-                self.mb_topic.send(MBRequest::MBTopicMsg(m.to_owned()));
+            BoardMsg::UpdateMatchboxes((m, s)) => {
+                log::info!("{:?}", self.current_moveset[self.current_moveset.len() - 1].0.clone());
+                self.mb_topic.send(MBRequest::MBTopicMsg((m.to_owned(), s)));
                 false
             },
             BoardMsg::EndGame => {
@@ -349,23 +352,23 @@ impl Component for Board {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let link = ctx.link();
         html! {
-            <div>
-            <table class="board" >
-                {self.cells.iter().enumerate().map(|(i, row)| {
-                    html! {
-                        <tr>
-                            {row.iter().enumerate().map(|(j, cell)| {
-                                html! {
-                                    <button class="board-cell" disabled={cell.disabled} onclick={link.callback(move |_| BoardMsg::Click(i, j))} >{cell.token}</button>
-                                }
-                            }).collect::<Html>()}
-                        </tr>
-                    }
-                }).collect::<Html>()}    
-            </table>
-            <button disabled={!self.reset} onclick={ctx.link().callback(|_| BoardMsg::Reset)}>
-                { "Reset" }
-            </button>
+            <div class="board">
+                <table class="board-table" >
+                    {self.cells.iter().enumerate().map(|(i, row)| {
+                        html! {
+                            <tr>
+                                {row.iter().enumerate().map(|(j, cell)| {
+                                    html! {
+                                        <button class="board-cell" disabled={cell.disabled} onclick={link.callback(move |_| BoardMsg::Click(i, j))} >{cell.token}</button>
+                                    }
+                                }).collect::<Html>()}
+                            </tr>
+                        }
+                    }).collect::<Html>()}    
+                </table>
+                <button id="reset-button" disabled={!self.reset} onclick={ctx.link().callback(|_| BoardMsg::Reset)}>
+                    { "Reset" }
+                </button>
             </div>
         }
     }
