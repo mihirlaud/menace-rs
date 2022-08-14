@@ -37,7 +37,7 @@ impl Component for Model {
                     <p>{"The Machine Educable Noughts and Crosses Engine, or MENACE, was a matchbox computer made by British computer scientist Donald Michie in 1961. Its purpose was to demonstrate the means by which computers could learn to play simple games at and beyond human skill levels through reinforcement learning."}</p>
                     <p>{"This website is an implementation of MENACE in the Rust programming language. The board of buttons allows you to play games as O against the computer as X. The 3x3 square on the right shows the probability that MENACE chose a given square on the previous move."}</p>
                     <p>{"You can learn more about MENACE and how it works "}<a href="https://en.wikipedia.org/wiki/Matchbox_Educable_Noughts_and_Crosses_Engine" target="_blank">{"here."}</a></p>
-                    <p>{"Created by "}<a href="https://mihirlaud.github.io/" target="_blank">{"Mihir Laud"}</a>{". Page last updated 2022-08-14."}</p>
+                    <p>{"Created by "}<a href="https://mihirlaud.github.io/" target="_blank">{"Mihir Laud."}</a>{" All source code can be found at "}<a href="https://github.com/mihirlaud/menace-rs" target="_blank">{"this GitHub repo."}</a>{" Page last updated 2022-08-14."}</p>
                 </div>
                 <div class="column">
                     <Board />
