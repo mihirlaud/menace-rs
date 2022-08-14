@@ -1,0 +1,78 @@
+@font-face {
+    font-family: CourierPrime;
+    src: url(../fonts/CourierPrime-Regular.ttf);
+}
+
+h1, p {
+    font-family: CourierPrime;
+}
+
+.column {
+    float: left;
+    width: 33.33%;
+}
+
+.board {
+    width: 90%;
+    margin: auto;
+    margin-top: 20px;
+}
+
+.board-table {
+    margin: auto;
+    border-collapse: collapse;
+}
+
+.board-cell {
+    width: 100px;
+    aspect-ratio: 1;
+    border: 1px solid black;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+}
+
+.matchbox-wrapper {
+    display: inline;
+    margin: 10px;
+    float: left;
+}
+
+.matchbox {
+    border-collapse: collapse;
+}
+
+.matchbox-cell {
+    width: 20px;
+    height: 20px;
+    border: 1px solid black;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+}
+
+#reset-button {
+    width: 100%;
+    margin: 20px 0 20px 0;
+    font-family: CourierPrime;
+}
+
+.scoreboard {
+    width: 80%;
+    margin: auto;
+    text-align: center;
+}
+
+.menace-vis-table {
+    border-collapse: collapse;
+    margin: auto;
+}
+
+.menace-vis-cell {
+    width: 100px;
+    height: 100px;
+    border: 1px solid black;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+}

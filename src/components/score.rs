@@ -46,7 +46,7 @@ impl Component for Scoreboard {
     fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <div class="scoreboard">
-                <p>{format!("Human : {}-{}-{} : Computer", self.wins, self.draws, self.losses)}</p>
+                <p>{format!("PLAYER : {}-{}-{} : MENACE", self.wins, self.draws, self.losses)}</p>
             </div>
         }
     }
